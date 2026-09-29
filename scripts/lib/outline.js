@@ -29,4 +29,4 @@ function outline(text, file, maxEntries = 150) {
   return { total: lines.length, entries };
 }
 
-module.exports = { outline };
+module.exports = { outline, RULES, EXT };
