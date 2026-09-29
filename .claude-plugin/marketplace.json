@@ -1,0 +1,12 @@
+{
+  "name": "claude-plug",
+  "owner": { "name": "a3k6g3d" },
+  "description": "Free Claude Code plugins that save tokens.",
+  "plugins": [
+    {
+      "name": "token-thrifty",
+      "source": "./",
+      "description": "Compress noisy tool output, guard huge file reads, report token savings. Free, no dependencies beyond Node."
+    }
+  ]
+}

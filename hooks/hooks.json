@@ -1,0 +1,21 @@
+{
+  "description": "token-thrifty: compress tool output and guard huge reads",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash|Grep|Glob",
+        "hooks": [
+          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/post-tool.js\"", "timeout": 10 }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Read",
+        "hooks": [
+          { "type": "command", "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/pre-read.js\"", "timeout": 10 }
+        ]
+      }
+    ]
+  }
+}
