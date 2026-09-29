@@ -6,7 +6,9 @@ A free Claude Code plugin that cuts wasted tokens. Only needs Node (already pres
 | Feature | How | Hook |
 |---|---|---|
 | **Output compression** | Strips ANSI/progress bars, collapses repeated lines (`x300`), truncates huge lines, keeps head + tail + buried error/warning lines of long output | `PostToolUse` on Bash, Grep, Glob (replaces the output with `updatedToolOutput`) |
-| **Big-read guard** | Blocks whole-file `Read` of files > 200 KB and tells Claude to Grep then Read with offset/limit | `PreToolUse` on Read |
+| **Outline-on-big-read** | A whole-file `Read` of a file > 200 KB is answered with a symbol outline (functions/classes/headings with line numbers) so Claude jumps straight to `offset/limit` in one step | `PreToolUse` on Read |
+| **Re-read dedup** | Re-reading an unchanged file/range in the same session is refused (it is already in context); state resets on `/clear` and after compaction | `PreToolUse` on Read + `SessionStart` |
+| **Where did my tokens go?** | `/token-thrifty:report` parses your transcript: tool output ranked by size, biggest single outputs, files read repeatedly | local transcript |
 | **Savings report** | `/token-thrifty:stats` shows estimated tokens saved | local log |
 | **lean-mode skill** | Habits: locate before reading, tail noisy commands, `/clear`, stable CLAUDE.md for cache hits | skill |
 
