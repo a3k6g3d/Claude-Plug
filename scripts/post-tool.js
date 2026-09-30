@@ -6,6 +6,7 @@ const { spill } = require('./lib/spill');
 const state = require('./lib/state');
 
 const MAX_SIGS = 30;
+const DEDUP = (process.env.TT_DEDUP || '').toLowerCase() === 'on';
 
 function textOf(resp) {
   if (typeof resp === 'string') return resp;
@@ -47,7 +48,9 @@ process.stdin.on('end', () => {
       record({ tool: 'backfire', before: 0, after: 0 });
     }
 
-    const r = run(text, (t) => spill(t, ev.session_id), cmd, { lossless });
+    // Grep/Glob results are rows the model scans, like git log or grep output: give them the high data cap.
+    const data = /^(Grep|Glob)$/.test(ev.tool_name);
+    const r = run(text, (t) => spill(t, ev.session_id), cmd, { lossless, data });
     let out = r.changed ? r.text : text;
     if (guard && r.omitted) {
       s.lossy[sig] = rawHash;
@@ -55,11 +58,13 @@ process.stdin.on('end', () => {
       if (keys.length > MAX_SIGS) delete s.lossy[keys[0]];
     }
 
-    // Cross-call dedup for shell output: skip lines the model already saw in a recent call.
+    // Cross-call dedup for shell output (opt-in: it saved ~0.3% in testing): skip lines the model already saw.
     if (shell) {
-      const d = dedup(out, cmd, s.calls);
-      s.calls = d.mem;
-      if (d.text !== null && d.text.length < out.length * 0.85) out = d.text;
+      if (DEDUP) {
+        const d = dedup(out, cmd, s.calls);
+        s.calls = d.mem;
+        if (d.text !== null && d.text.length < out.length * 0.85) out = d.text;
+      }
       state.save(ev.session_id, s, 'out');
     }
 

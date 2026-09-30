@@ -58,5 +58,6 @@ if (mb) {
   lines.push('Most of that is the app itself (system prompt, built-in tools, bundled plugins and connectors). Disable connectors/plugins you never use in the app settings; the estimate above only covers CLAUDE.md and .mcp.json.');
 }
 lines.push(`Estimated from CLAUDE.md/.mcp.json only: ~${total.toLocaleString()} tokens (MCP counted at ~3k each; estimate).`);
+lines.push('Biggest measured lever: the lean startup profile (-58% startup prompt, -34% real cost in testing). Run /token-thrifty:lean.');
 lines.push('Tips: /mcp to disable unused servers; keep CLAUDE.md short and stable for cache hits.');
 console.log(lines.join('\n'));

@@ -30,7 +30,7 @@ test('hook dedups a repeated command across calls and resets on compact', () => 
   const out = Array.from({ length: 30 }, (_, i) => `module ${i} compiled in a reasonable amount of time`).join('\n');
   const call = () => spawnSync('node', [path.join(__dirname, '..', 'scripts', 'post-tool.js')], {
     input: JSON.stringify({ session_id: sid, tool_name: 'Bash', tool_input: { command: 'npm run build' }, tool_response: { stdout: out } }),
-    env: Object.assign({}, process.env, { CLAUDE_PLUGIN_DATA: fs.mkdtempSync(path.join(os.tmpdir(), 'tt-data-')) }),
+    env: Object.assign({}, process.env, { TT_DEDUP: 'on', CLAUDE_PLUGIN_DATA: fs.mkdtempSync(path.join(os.tmpdir(), 'tt-data-')) }),
     encoding: 'utf8',
   }).stdout;
   try {
@@ -85,4 +85,32 @@ test('backfire guard: an edit-and-rerun loop (different output) is still trimmed
     assert.ok(call(rows('a')).includes('lines omitted'));
     assert.ok(call(rows('b')).includes('lines omitted'));   // code changed, output changed: normal loop, keep trimming
   } finally { state.reset(sid); }
+});
+
+test('defaults: dedup is off, and a repeated identical command is not rewritten', () => {
+  const state = require('../scripts/lib/state');
+  const sid = `nodedup-${Date.now()}`;
+  const out = Array.from({ length: 30 }, (_, i) => `module ${i} compiled in a reasonable amount of time`).join('\n');
+  const env = Object.assign({}, process.env, { CLAUDE_PLUGIN_DATA: fs.mkdtempSync(path.join(os.tmpdir(), 'tt-data-')) });
+  delete env.TT_DEDUP;
+  const call = () => spawnSync('node', [path.join(__dirname, '..', 'scripts', 'post-tool.js')], {
+    input: JSON.stringify({ session_id: sid, tool_name: 'Bash', tool_input: { command: 'npm run build' }, tool_response: { stdout: out } }),
+    env, encoding: 'utf8',
+  }).stdout;
+  try { assert.strictEqual(call(), ''); assert.strictEqual(call(), ''); } finally { state.reset(sid); }
+});
+
+test('Grep results get the high data cap, not the ordinary 120-line cap', () => {
+  const { run } = require('../scripts/lib/pipeline');
+  const rows = Array.from({ length: 500 }, (_, i) => `src/file${i}.ts:${i}:const value = compute(${i});`).join('\n');
+  assert.ok(!run(rows, () => 'S', undefined, { data: true }).changed);
+  assert.ok(run(rows, () => 'S', undefined, {}).text.includes('lines omitted'));
+});
+
+test('lean profile command lists the measured flags', () => {
+  const { lines, TOOLS } = require('../scripts/lean');
+  const text = lines.join('\n');
+  assert.ok(text.includes('--strict-mcp-config'));
+  assert.ok(text.includes(TOOLS));
+  assert.ok(text.includes('/clear'));
 });

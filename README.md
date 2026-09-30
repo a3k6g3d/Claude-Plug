@@ -13,7 +13,8 @@ A free Claude Code plugin that trims noisy tool output and guards against wastef
 | **Line caps by command type** | Ordinary logs are cut above 120 lines. Commands that return rows the model will count or scan (`git log/diff/show`, `grep`, `find`, `ls`, `wc`, `awk`, ...) get 800. Deliberate file reads (`sed -n`, `cat`, `head`, `tail`, `Get-Content`) get 300 | same hook |
 | **Error-line safeguard** | After compression, any error/warning-looking line of the original that is no longer visible is appended back (up to 30) | same hook |
 | **Full output kept** | When lines are omitted, the untouched output is saved to a temp file and the marker names it, so Claude can Grep it instead of re-running the command. Files are deleted after 24 hours | same hook |
-| **Cross-call dedup** | If a re-run of the same command mostly repeats lines Claude already saw, only the new lines are shown (plus every error line, plus a count of lines that vanished) | same hook |
+| **Cross-call dedup** (off by default, `TT_DEDUP=on`) | If a re-run of the same command mostly repeats lines Claude already saw, only the new lines are shown (plus every error line, plus a count of lines that vanished). Saved about 0.3% in testing, so it is opt-in | same hook |
+| **Lean startup profile** | `/token-thrifty:lean` prints the launch flags that cut the startup prompt 58% and real cost 34% in testing, and what they give up. This is the biggest measured lever, and it is a recipe, not a hook | command |
 | **Backfire guard** | If a command whose output was trimmed is re-run and gives identical output, Claude came back for what was cut: it gets everything this time and trimming is switched off for that command for the session. Counted in `/token-thrifty:stats` | same hook |
 | **Outline-on-big-read** | A whole-file `Read` of a file over 200 KB is answered with a symbol outline so Claude can jump to `offset/limit` | `PreToolUse` on Read |
 | **Re-read guard** | Re-reading an unchanged file range in the same session is refused (it is already in context). State resets on `/clear` and after compaction | `PreToolUse` on Read + `SessionStart` |
@@ -40,12 +41,24 @@ Everything below was measured on one Windows machine, mostly on one project, wit
 
 **The bigger cost is elsewhere.** A trivial "reply ready" run costs about $0.07, and a typical light task $0.16, so roughly 45% of a light task is the fixed startup context (about 57K tokens before you type anything). Nothing that only shrinks tool output can touch that. `/token-thrifty:audit` reports your measured number.
 
+**Things that did move real cost** (12 paired exploration tasks per arm, sonnet, one project):
+
+| Change | Result |
+|---|---|
+| Lean startup profile (6 core tools, no MCP, no synced plugins): `/token-thrifty:lean` | Startup prompt 56K -> 23.5K tokens (-58%). Cost median -34% (range -46% to -12%), cheaper in 10 of 12 pairs. Open-ended searches took more, cheaper, turns. Gives up MCP connectors and web tools |
+| A fresh session between unrelated tasks (`/clear`) | 3 tasks cost $0.66, vs $1.03 in one session |
+| `/compact` after each task | $2.95 for the same 3 tasks: the most expensive option. Each compaction cost $0.3-0.85 and the next task re-paid its cache. May differ in one long session on a single topic |
+| A "work lean" instruction appended to the system prompt | No detectable change (-1%) |
+| A Haiku read-only explorer subagent | No cost benefit (+8.5%) despite 35% fewer tokens |
+
+Startup-prompt sizes by setting: skills off alone ~0 change; MCP off alone -2K; the built-in tool definitions are most of the rest.
+
 An independent benchmark of a different output-compression tool ([JetBrains, rtk](https://blog.jetbrains.com/ai/2026/07/rtk-claude-code-token-savings/)) found the same shape: large claimed savings, no real cost reduction on mixed tasks, because output compression only reaches a slice of total spend.
 
 ## Where it can hurt
 
 - **Trimmed output can cost extra turns.** If Claude needs a line that was cut, it may re-run or go looking. The error-line safeguard, the saved full output and the backfire guard reduce this; they do not eliminate it.
-- **Dedup and file-read logic add complexity for small gains** (dedup saved about 0.3% on the replay).
+- **Dedup adds complexity for a small gain** (about 0.3% on the replay), so it is off by default.
 - **"Tokens saved" is an estimate** (characters removed / 4), not a measured bill.
 - **Only some tool results are reachable.** Bash, PowerShell, Grep and Glob output can be rewritten. Read results and MCP results are not compressed.
 - **Versions before 0.3.3 could blank CRLF (Windows) output.** Update if you installed earlier.
@@ -65,11 +78,14 @@ Restart Claude Code, then run a noisy command and check `/token-thrifty:stats`.
 - `/token-thrifty:stats`: how many outputs were compressed, the estimated tokens saved per tool, and any possible backfires.
 - `/token-thrifty:report`: where this project's tokens went (largest tool outputs, files read repeatedly), from your local transcript.
 - `/token-thrifty:audit`: your measured startup context (median first-turn size from recent sessions) plus CLAUDE.md and MCP estimates.
+- `/token-thrifty:lean`: the lean startup profile and what it gives up.
 
 ## Config (env vars)
 
 - `TOKEN_THRIFTY=off` disables everything.
 - `TT_READ_MAX_BYTES=200000` changes the read-guard threshold.
+- `TT_READ_GUARD=off` disables the read guard (outline-on-big-read and re-read refusal).
+- `TT_DEDUP=on` enables cross-call dedup (off by default).
 
 ## Files it writes
 

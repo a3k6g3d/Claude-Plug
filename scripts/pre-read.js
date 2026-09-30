@@ -19,6 +19,7 @@ process.stdin.on('data', (d) => (raw += d));
 process.stdin.on('end', () => {
   try {
     if ((process.env.TOKEN_THRIFTY || '').toLowerCase() === 'off') return;
+    if ((process.env.TT_READ_GUARD || '').toLowerCase() === 'off') return;
     const ev = JSON.parse(raw);
     const ti = ev.tool_input || {};
     if (!ti.file_path || SKIP.test(ti.file_path)) return;
