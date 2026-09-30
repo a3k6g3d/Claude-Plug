@@ -122,3 +122,33 @@ function compare(rows, baseArm, metric) {
 }
 
 module.exports = { parseStream, toRow, checkPlugins, compare, median, signTest, bootstrapMedianCI, tokensOf };
+
+// A fair A/B needs arms that differ ONLY by the plugin under test. Compare the plugin sets that actually loaded.
+function armSetProblems(rows, baseArm) {
+  const problems = [];
+  const sets = {};
+  for (const r of rows) {
+    if (!r.plugins) continue;
+    (sets[r.arm] = sets[r.arm] || new Set()).add(JSON.stringify(r.plugins.slice().sort()));
+  }
+  for (const [arm, s] of Object.entries(sets)) {
+    if (s.size > 1) problems.push(`arm "${arm}" loaded different plugin sets in different trials (${[...s].map((x) => JSON.parse(x).join('+')).join(' | ')})`);
+  }
+  const sample = (arm) => { const rr = rows.find((r) => r.arm === arm && r.plugins); return rr ? { plugins: rr.plugins, expect: Object.keys(rr.expectPlugins || {}) } : null; };
+  const base = sample(baseArm);
+  if (base) {
+    for (const arm of Object.keys(sets)) {
+      if (arm === baseArm) continue;
+      const cur = sample(arm);
+      const allowed = new Set([...base.expect, ...cur.expect].map((x) => x.toLowerCase()));
+      const a = new Set(base.plugins);
+      const b = new Set(cur.plugins);
+      const diff = [...a].filter((x) => !b.has(x)).concat([...b].filter((x) => !a.has(x)))
+        .filter((x) => ![...allowed].some((al) => x.toLowerCase().includes(al)));
+      if (diff.length) problems.push(`arms "${baseArm}" and "${arm}" differ by more than the plugin under test: ${diff.join(', ')}`);
+    }
+  }
+  return problems;
+}
+
+module.exports.armSetProblems = armSetProblems;
