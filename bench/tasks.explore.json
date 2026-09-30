@@ -1,0 +1,18 @@
+[
+  {
+    "id": "tour",
+    "prompt": "Give me an architecture overview: read the main entry points and list each top-level module or directory with one sentence on its responsibility. Do not modify any files."
+  },
+  {
+    "id": "swallowed-errors",
+    "prompt": "Find places where errors are swallowed silently (empty catch blocks, bare except, ignored error returns). List up to 10 of them with file:line and a one-line note each. Do not modify any files."
+  },
+  {
+    "id": "big-file",
+    "prompt": "Find the largest source file in the repository (excluding lockfiles, vendored and generated code), read it, and summarise its main functions and any bugs or code smells you notice. Do not modify any files."
+  },
+  {
+    "id": "todo-scan",
+    "prompt": "Search the entire repository (excluding node_modules and build output) for every TODO, FIXME, HACK and XXX comment using grep with line numbers, without limiting the output. Report counts per top-level directory and quote the 5 most concerning ones. Do not modify any files."
+  }
+]

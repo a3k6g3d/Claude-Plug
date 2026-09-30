@@ -47,7 +47,7 @@ function recover(original, final, saved) {
 // `spill(text)` should return a file path holding the untouched output (or null).
 function run(text, spill, cmd, opts) {
   // `lossless`: never drop the middle of the output (used once trimming this command proved counter-productive).
-  const base = (opts && opts.lossless) ? { maxLines: 1e9 } : isFileRead(cmd) ? FILE_READ_OPTS : isDataCommand(cmd) ? DATA_OPTS : {};
+  const base = (opts && opts.lossless) ? { maxLines: 1e9 } : isFileRead(cmd) ? FILE_READ_OPTS : ((opts && opts.data) || isDataCommand(cmd)) ? DATA_OPTS : {};
   const unchanged = { text, before: text.length, after: text.length, changed: false, restored: 0 };
   let work = text;
   let saved = null;

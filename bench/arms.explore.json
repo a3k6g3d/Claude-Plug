@@ -1,0 +1,61 @@
+{
+  "baseline": {
+    "settings": {
+      "enabledPlugins": {
+        "token-thrifty@claude-plug": false
+      }
+    },
+    "expectPlugins": {
+      "token-thrifty": false
+    }
+  },
+  "lean-startup": {
+    "settings": {
+      "enabledPlugins": {
+        "token-thrifty@claude-plug": false,
+        "cowork-plugin-management@synced": false,
+        "pdf-viewer@synced": false
+      }
+    },
+    "args": [
+      "--strict-mcp-config",
+      "--tools",
+      "Bash,Read,Grep,Glob,Edit,Write"
+    ],
+    "expectPlugins": {
+      "token-thrifty": false,
+      "cowork-plugin-management": false,
+      "pdf-viewer": false
+    }
+  },
+  "lean-instruction": {
+    "settings": {
+      "enabledPlugins": {
+        "token-thrifty@claude-plug": false
+      }
+    },
+    "args": [
+      "--append-system-prompt",
+      "Work token-lean: locate before reading (Grep/Glob first, then Read with offset/limit); never dump whole files or unfiltered command output; pipe noisy commands through head/tail/grep; prefer one targeted command over several exploratory ones; then answer directly."
+    ],
+    "expectPlugins": {
+      "token-thrifty": false
+    }
+  },
+  "haiku-explorer": {
+    "settings": {
+      "enabledPlugins": {
+        "token-thrifty@claude-plug": false
+      }
+    },
+    "args": [
+      "--agents",
+      "{\"explorer\":{\"description\":\"Read-only code explorer. Use it to search and read files when answering questions about the codebase.\",\"prompt\":\"You explore code read-only and return a concise, factual summary with file:line references.\",\"model\":\"haiku\",\"tools\":[\"Read\",\"Grep\",\"Glob\",\"Bash\"]}}",
+      "--append-system-prompt",
+      "For any task that needs reading or searching more than two files, delegate the exploration to the explorer subagent, then answer from its summary."
+    ],
+    "expectPlugins": {
+      "token-thrifty": false
+    }
+  }
+}
