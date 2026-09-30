@@ -88,3 +88,19 @@ test('file-read commands get a 300-line cap, other commands keep 120', () => {
   const big = Array.from({ length: 600 }, (_, i) => `const value${i} = compute(${i}); // some line of code`).join('\n');
   assert.ok(run(big, () => 'S', 'cat src/big.ts').text.includes('lines omitted')); // huge dumps still trimmed
 });
+
+test('data-style commands get a high cap; logs keep the ordinary one', () => {
+  const { run, isDataCommand } = require('../scripts/lib/pipeline');
+  assert.ok(isDataCommand('git log --stat -40'));
+  assert.ok(isDataCommand('cd "I:/proj" && git diff HEAD~3'));
+  assert.ok(isDataCommand('grep -rn "TODO" src'));
+  assert.ok(isDataCommand('Get-ChildItem -Recurse'));
+  assert.ok(!isDataCommand('npm test'));
+  assert.ok(!isDataCommand('git status'));
+  assert.ok(!isDataCommand('node --test dist'));
+  const rows = Array.from({ length: 500 }, (_, i) => ` src/file${i}.ts | ${i % 40 + 1} ++++`).join('\n');
+  assert.ok(!run(rows, () => 'S', 'git log --stat -40').changed);             // 500 data rows kept whole
+  assert.ok(run(rows, () => 'S', 'npm run build').text.includes('lines omitted')); // same rows as a log are trimmed
+  const huge = Array.from({ length: 2000 }, (_, i) => ` src/file${i}.ts | ${i % 40 + 1} ++++`).join('\n');
+  assert.ok(run(huge, () => 'S', 'git log --stat').text.includes('lines omitted')); // extreme outputs still capped
+});

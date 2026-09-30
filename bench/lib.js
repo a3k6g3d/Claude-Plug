@@ -4,14 +4,24 @@
 function parseStream(stdout) {
   let init = null;
   let result = null;
+  const tools = {};
+  const calls = [];
   for (const line of String(stdout).split('\n')) {
     if (!line.trim()) continue;
     let o;
     try { o = JSON.parse(line); } catch (_) { continue; }
     if (o.type === 'system' && o.subtype === 'init') init = o;
     else if (o.type === 'result') result = o;
+    else if (o.type === 'assistant' && o.message && Array.isArray(o.message.content)) {
+      for (const c of o.message.content) {
+        if (c.type !== 'tool_use') continue;
+        tools[c.name] = (tools[c.name] || 0) + 1;
+        const i = c.input || {};
+        calls.push(`${c.name}: ${String(i.file_path || i.command || i.pattern || '').replace(/\s+/g, ' ').slice(0, 110)}`);
+      }
+    }
   }
-  return { init, result };
+  return { init, result, tools, calls };
 }
 
 function tokensOf(result) {
@@ -41,6 +51,8 @@ function toRow(meta, parsed, opts) {
     answerChars: text.length,
     passedExpect: expect.length ? expect.every((e) => new RegExp(e, 'i').test(text)) : null,
     plugins,
+    tools: parsed.tools || {},
+    calls: parsed.calls || [],
   });
 }
 

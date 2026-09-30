@@ -12,6 +12,16 @@ function isFileRead(cmd) {
   const c = String(cmd || '').replace(/^\s*(cd\s+("[^"]*"|\S+)\s*(&&|;)\s*)+/, '').replace(/^(\w+=\S+\s+)+/, '');
   return FILE_READ.test(c);
 }
+
+// Data-style commands (git log/diff/show, grep, find, ls, wc, awk ...) return rows the model will count, sum
+// or scan. Cutting their middle made it re-run the command to verify (seen in the A/B benchmark), so they
+// only get a high cap. Build/test/install logs keep the ordinary cap: there only the failures matter.
+const DATA_CMD = /^(git\s+(log|diff|show|blame|ls-files|grep|shortlog|branch|tag)\b|grep\b|rg\b|ag\b|find\b|fd\b|ls\b|dir\b|tree\b|wc\b|sort\b|uniq\b|awk\b|jq\b|diff\b|Get-ChildItem|Select-String|Measure-Object)/;
+const DATA_OPTS = { maxLines: 800, head: 300, tail: 400 };
+function isDataCommand(cmd) {
+  const c = String(cmd || '').replace(/^\s*(cd\s+("[^"]*"|\S+)\s*(&&|;)\s*)+/, '').replace(/^(\w+=\S+\s+)+/, '');
+  return DATA_CMD.test(c);
+}
 const clean = (l) => l.replace(ANSI, '').replace(/\r+$/, '').trim();
 
 // Safeguard: after compression, every error/warning-looking line of the original must still be visible.
@@ -36,7 +46,7 @@ function recover(original, final, saved) {
 // Full compression pipeline used by the PostToolUse hook: test-run collapse, generic compression, safeguard.
 // `spill(text)` should return a file path holding the untouched output (or null).
 function run(text, spill, cmd) {
-  const base = isFileRead(cmd) ? FILE_READ_OPTS : {};
+  const base = isFileRead(cmd) ? FILE_READ_OPTS : isDataCommand(cmd) ? DATA_OPTS : {};
   const unchanged = { text, before: text.length, after: text.length, changed: false, restored: 0 };
   let work = text;
   let saved = null;
@@ -60,4 +70,4 @@ function run(text, spill, cmd) {
   return { text: final, before: text.length, after: final.length, changed: true, restored: rec.restored };
 }
 
-module.exports = { run, recover, isFileRead };
+module.exports = { run, recover, isFileRead, isDataCommand };

@@ -1,0 +1,19 @@
+[
+  {
+    "id": "tests-verbose",
+    "prompt": "Run the project's full test suite using the most verbose reporter available (for node --test use --test-reporter=spec) and do not truncate, filter or pipe the output. Then list every test file with how many tests passed in it, and the overall total. Do not modify any files.",
+    "expect": ["584"]
+  },
+  {
+    "id": "git-stat",
+    "prompt": "Run `git log --stat -40` without truncating or filtering the output, then tell me which 10 files had the most lines added in total across those commits. Do not modify any files."
+  },
+  {
+    "id": "todo-scan",
+    "prompt": "Search the entire repository (excluding node_modules and build output) for every TODO, FIXME, HACK and XXX comment using grep with line numbers, without limiting the output. Report counts per top-level directory and quote the 5 most concerning ones. Do not modify any files."
+  },
+  {
+    "id": "build-verbose",
+    "prompt": "Run the project's build with verbose output if possible, without piping it through head or tail, and list every distinct warning or error message with how often it appears. If the build is clean, say so. Do not modify any files."
+  }
+]
