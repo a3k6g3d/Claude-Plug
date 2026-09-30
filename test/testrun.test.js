@@ -47,3 +47,30 @@ test('pipeline spills once and reports savings', () => {
   assert.ok(r.after < r.before / 4);
   assert.ok(r.text.includes('300 passed'));
 });
+
+test('safeguard restores error lines lost beyond the compressor cap', () => {
+  const { recover } = require('../scripts/lib/pipeline');
+  const original = Array.from({ length: 100 }, (_, i) => `ERROR module ${i} failed to link`).join('\n');
+  const r = recover(original, 'header only', 'S.txt');
+  assert.strictEqual(r.restored, 30);
+  assert.ok(r.text.includes('ERROR module 0 failed to link'));
+  assert.ok(r.text.includes('70 more not shown (see S.txt)'));
+});
+
+test('safeguard ignores passing-test names and lines already shown', () => {
+  const { recover } = require('../scripts/lib/pipeline');
+  const original = ['✔ a staked position cannot be sold (1ms)', 'ERROR real problem here'].join('\n');
+  const shownAlready = recover(original, 'ERROR real problem here\n[collapsed]');
+  assert.strictEqual(shownAlready.restored, 0);
+  assert.strictEqual(shownAlready.text, 'ERROR real problem here\n[collapsed]');
+});
+
+test('pipeline output never loses an error line even with 100 errors mid-output', () => {
+  const { run } = require('../scripts/lib/pipeline');
+  const lines = Array.from({ length: 600 }, (_, i) => (i >= 100 && i < 200 ? `ERROR issue ${i} broke` : `plain line ${i} of output`));
+  const r = run(lines.join('\n'), () => 'S.txt');
+  const shown = new Set(r.text.split('\n'));
+  const visible = Array.from({ length: 100 }, (_, i) => `ERROR issue ${i + 100} broke`).filter((l) => shown.has(l)).length;
+  assert.strictEqual(visible, 70); // 40 kept by the compressor + 30 restored
+  assert.ok(r.text.includes('30 more not shown (see S.txt)'));
+});
