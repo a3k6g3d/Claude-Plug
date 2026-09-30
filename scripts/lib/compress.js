@@ -51,4 +51,4 @@ function compress(input, opts) {
   return { text, before, after, changed: true };
 }
 
-module.exports = { compress, DEFAULTS };
+module.exports = { compress, DEFAULTS, IMPORTANT, ANSI };
