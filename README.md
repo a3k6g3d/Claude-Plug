@@ -10,7 +10,7 @@ A free Claude Code plugin that cuts wasted tokens. Only needs Node (already pres
 | **Re-read dedup** | Re-reading an unchanged file/range in the same session is refused (it is already in context); state resets on `/clear` and after compaction | `PreToolUse` on Read + `SessionStart` |
 | **Where did my tokens go?** | `/token-thrifty:report` parses your transcript: tool output ranked by size, biggest single outputs, files read repeatedly | local transcript |
 | **Savings report** | `/token-thrifty:stats` shows estimated tokens saved | local log |
-| **MCP connector** (bundled, zero-dependency) | Three tiny tools: `outline` (file structure), `symbol` (returns just one function/class/heading by name, repo-wide), `savings`. Tool definitions are ~150 tokens total | `.mcp.json` |
+| **MCP connector** (bundled, zero-dependency) | Three tiny tools: `outline` (file structure), `symbol` (returns just one function/class/heading by name, repo-wide), `savings`. Tool definitions are ~150 tokens total | `mcpServers` in plugin.json |
 | **Skills** | `lean-mode`, `symbol-first` (use the MCP tools instead of whole-file reads), `context-audit` | skills |
 | **`/token-thrifty:audit`** | Estimates fixed per-session cost: CLAUDE.md size, number of MCP servers | local files |
 | **lean-mode skill** | Habits: locate before reading, tail noisy commands, `/clear`, stable CLAUDE.md for cache hits | skill |

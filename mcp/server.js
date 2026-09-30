@@ -44,7 +44,7 @@ function call(name, args) {
 
 function handle(msg) {
   const { id, method, params } = msg;
-  if (method === 'initialize') return { protocolVersion: (params && params.protocolVersion) || '2025-06-18', capabilities: { tools: {} }, serverInfo: { name: 'token-thrifty', version: '0.3.0' } };
+  if (method === 'initialize') return { protocolVersion: (params && params.protocolVersion) || '2025-06-18', capabilities: { tools: {} }, serverInfo: { name: 'token-thrifty', version: '0.3.1' } };
   if (method === 'tools/list') return { tools: TOOLS };
   if (method === 'ping') return {};
   if (method === 'tools/call') {
