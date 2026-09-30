@@ -1,0 +1,26 @@
+[
+  {
+    "id": "tests",
+    "prompt": "Run this project's test suite (work out the right command from package.json, pyproject.toml, Makefile or similar). Report the total passed and failed and name any failing tests. Do not modify any files."
+  },
+  {
+    "id": "tour",
+    "prompt": "Give me an architecture overview: read the main entry points and list each top-level module or directory with one sentence on its responsibility. Do not modify any files."
+  },
+  {
+    "id": "swallowed-errors",
+    "prompt": "Find places where errors are swallowed silently (empty catch blocks, bare except, ignored error returns). List up to 10 of them with file:line and a one-line note each. Do not modify any files."
+  },
+  {
+    "id": "typecheck",
+    "prompt": "Run the project's type-check, lint or build command (whichever exists) and summarise any errors or warnings by category. If none of these exist, say so. Do not modify any files."
+  },
+  {
+    "id": "git-history",
+    "prompt": "Using git only, summarise the last 30 commits by theme and list the 5 most frequently changed files in that range. Do not modify any files."
+  },
+  {
+    "id": "big-file",
+    "prompt": "Find the largest source file in the repository (excluding lockfiles, vendored and generated code), read it, and summarise its main functions and any bugs or code smells you notice. Do not modify any files."
+  }
+]
