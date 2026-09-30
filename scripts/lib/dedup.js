@@ -19,7 +19,7 @@ function hash(s) { // FNV-1a, 32-bit
   return h >>> 0;
 }
 
-const norm = (c) => String(c || '').replace(/s+/g, ' ').trim();
+const norm = (c) => String(c || '').replace(/\s+/g, ' ').trim();
 const sameCmd = (a, b) => norm(a).slice(0, 60) === norm(b).slice(0, 60);
 const linesOf = (text) => text.split('\n').map(clean).filter((l) => l.trim());
 
