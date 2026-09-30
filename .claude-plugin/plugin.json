@@ -1,6 +1,6 @@
 {
   "name": "token-thrifty",
-  "version": "0.3.8",
+  "version": "0.3.9",
   "description": "Zero-dependency, free token saver for Claude Code: compresses noisy tool output, guards against huge file reads, and reports estimated savings.",
   "author": {
     "name": "a3k6g3d"
