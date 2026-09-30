@@ -4,7 +4,7 @@ const ANSI = /\u001b\[[0-9;?]*[ -/]*[@-~]|\u001b\][^\u0007]*\u0007/g;
 const PROGRESS = /^\s*(?:\d{1,3}%|[#=>\-.\s]{8,}$|.*\b\d+(?:\.\d+)?\s?[kMG]?i?B\/s\b)/;
 const IMPORTANT = /\b(error|fail(?:ed|ure|ing)?|exception|traceback|panic|fatal|denied|not found|cannot|unable|warning)\b|✗|✘|FAIL\b/i;
 
-const DEFAULTS = { minChars: 1500, maxLines: 120, head: 40, tail: 60, maxImportant: 40, maxLineLen: 400 };
+const DEFAULTS = { minChars: 1500, maxLines: 120, head: 40, tail: 60, maxImportant: 40, maxLineLen: 400, hint: 'Re-run with a narrower command or redirect to a file if you need them.' };
 
 function compress(input, opts) {
   const o = Object.assign({}, DEFAULTS, opts);
@@ -42,7 +42,7 @@ function compress(input, opts) {
     const middle = lines.slice(o.head, lines.length - o.tail);
     const keep = middle.filter((l) => IMPORTANT.test(l)).slice(0, o.maxImportant);
     const omitted = middle.length - keep.length;
-    lines = [...head, `[token-thrifty: ${omitted} lines omitted${keep.length ? `; ${keep.length} error/warning lines from the omitted section kept below` : ''}. Re-run with a narrower command or redirect to a file if you need them.]`, ...keep, ...tail];
+    lines = [...head, `[token-thrifty: ${omitted} lines omitted${keep.length ? `; ${keep.length} error/warning lines from the omitted section kept below` : ''}. ${o.hint}]`, ...keep, ...tail];
   }
 
   const text = lines.join('\n').replace(/\n+$/, '');
