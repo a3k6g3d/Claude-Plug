@@ -90,6 +90,11 @@ function main() {
     const row = toRow({ task: t.task.id, arm: t.arm.name, rep: t.rep, wallMs: Date.now() - started, compressions: countLines(statsFile) - before }, parsed, { expect: t.task.expect });
     row.problems = checkPlugins(row, t.arm);
     if (!parsed.result) row.error = (p.stderr || p.error || 'no result event').toString().slice(0, 300);
+    else if (!row.ok) row.error = String(parsed.result.result || parsed.result.terminal_reason || 'error').slice(0, 300);
+    if (!row.ok && /not logged in|authentication|api key|\/login/i.test(row.error || '')) {
+      console.error(`\nAborting: claude -p is not authenticated (${row.error}).\nSign in first with: claude auth login\nNothing was recorded for this trial and nothing was billed.`);
+      process.exit(3);
+    }
     fs.appendFileSync(file, JSON.stringify(row) + '\n');
     fs.writeFileSync(path.join(out, `${t.task.id}.${t.arm.name}.${t.rep}.txt`), (parsed.result && parsed.result.result) || '');
     console.log(`[${n}/${todo.length}] ${t.task.id} / ${t.arm.name} / rep ${t.rep}: ${row.ok ? `$${(row.cost || 0).toFixed(3)}, ${row.turns} turns, ${row.compressions} compressions` : `FAILED ${row.error || ''}`}${row.problems.length ? `  !! ${row.problems.join('; ')}` : ''}`);
