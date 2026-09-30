@@ -104,3 +104,31 @@ test('data-style commands get a high cap; logs keep the ordinary one', () => {
   const huge = Array.from({ length: 2000 }, (_, i) => ` src/file${i}.ts | ${i % 40 + 1} ++++`).join('\n');
   assert.ok(run(huge, () => 'S', 'git log --stat').text.includes('lines omitted')); // extreme outputs still capped
 });
+
+test('go test -v, cargo test and unittest formats collapse; failures stay', () => {
+  const go = [
+    ...Array.from({ length: 6 }, (_, i) => `=== RUN   TestThing${i}\n--- PASS: TestThing${i} (0.00s)`),
+    '=== RUN   TestBroken', '--- FAIL: TestBroken (0.01s)', '    broken_test.go:12: expected 2, got 3', 'FAIL', 'FAIL\tgithub.com/x/y\t0.020s',
+  ].join('\n');
+  const g = collapsePassing(go);
+  assert.ok(g.collapsed >= 12);
+  assert.ok(g.text.includes('--- FAIL: TestBroken'));
+  assert.ok(g.text.includes('expected 2, got 3'));
+  assert.ok(g.text.includes('FAIL\tgithub.com/x/y'));
+
+  const cargo = [...Array.from({ length: 9 }, (_, i) => `test util::case_${i} ... ok`), 'test util::bad ... FAILED', 'test result: FAILED. 9 passed; 1 failed'].join('\n');
+  const c = collapsePassing(cargo);
+  assert.strictEqual(c.collapsed, 9);
+  assert.ok(c.text.includes('test util::bad ... FAILED'));
+  assert.ok(c.text.includes('9 passed; 1 failed'));
+
+  const ut = [...Array.from({ length: 8 }, (_, i) => `test_case_${i} (pkg.tests.Suite) ... ok`), 'test_bad (pkg.tests.Suite) ... FAIL', 'AssertionError: 1 != 2'].join('\n');
+  const u = collapsePassing(ut);
+  assert.strictEqual(u.collapsed, 8);
+  assert.ok(u.text.includes('test_bad (pkg.tests.Suite) ... FAIL'));
+  assert.ok(u.text.includes('AssertionError: 1 != 2'));
+
+  const pkgs = [...Array.from({ length: 9 }, (_, i) => `ok  \tgithub.com/x/pkg${i}\t0.${i}12s`), 'FAIL\tgithub.com/x/bad\t0.3s'].join('\n');
+  assert.strictEqual(collapsePassing(pkgs).collapsed, 9);
+  assert.ok(collapsePassing(pkgs).text.includes('FAIL\tgithub.com/x/bad'));
+});

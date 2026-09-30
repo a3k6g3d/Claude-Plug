@@ -61,4 +61,4 @@ function dedup(text, cmd, mem) {
   return { text: fresh.length ? `${head}\n${fresh.join('\n')}` : head, mem: remember() };
 }
 
-module.exports = { dedup, MIN_CHARS, MIN_OVERLAP };
+module.exports = { dedup, hash, MIN_CHARS, MIN_OVERLAP };

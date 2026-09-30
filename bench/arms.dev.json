@@ -1,0 +1,11 @@
+{
+  "baseline": {
+    "settings": { "enabledPlugins": { "token-thrifty@claude-plug": false } },
+    "expectPlugins": { "token-thrifty": false }
+  },
+  "local-dev": {
+    "settings": { "enabledPlugins": { "token-thrifty@claude-plug": false } },
+    "args": ["--plugin-dir", "I:/Claude-Plug"],
+    "expectPlugins": { "token-thrifty": true }
+  }
+}
