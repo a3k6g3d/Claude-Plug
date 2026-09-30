@@ -12,6 +12,7 @@ function compress(input, opts) {
   if (before < o.minChars) return { text: input, before, after: before, changed: false };
 
   let lines = input.replace(ANSI, '').split('\n').map((l) => {
+    l = l.replace(/\r+$/, ''); // CRLF: drop the line ending before looking for in-line \r overwrites
     const cr = l.lastIndexOf('\r');
     return (cr >= 0 ? l.slice(cr + 1) : l).replace(/\s+$/, '');
   });

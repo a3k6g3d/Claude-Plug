@@ -34,3 +34,17 @@ test('carriage-return progress keeps last frame', () => {
   const r = compress(input, { maxLineLen: 50 });
   assert.ok(r.text.startsWith('c-final'));
 });
+
+test('CRLF output keeps its content (regression: lines were blanked)', () => {
+  const lines = Array.from({ length: 200 }, (_, i) => `WARN item ${i} failed to load`);
+  const r = compress(lines.join('\r\n') + '\r\n');
+  assert.ok(r.text.includes('WARN item 0 failed to load'));
+  assert.ok(r.text.includes('WARN item 199 failed to load'));
+  assert.ok(!/\r/.test(r.text));
+});
+
+test('CRLF small-ish output is not emptied', () => {
+  const lines = Array.from({ length: 80 }, (_, i) => `line number ${i} with some padding text to reach the size threshold`);
+  const r = compress(lines.join('\r\n'));
+  assert.ok(r.text.split('\n').filter(Boolean).length >= 40);
+});
