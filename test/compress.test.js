@@ -48,3 +48,10 @@ test('CRLF small-ish output is not emptied', () => {
   const r = compress(lines.join('\r\n'));
   assert.ok(r.text.split('\n').filter(Boolean).length >= 40);
 });
+
+test('hint option replaces the default guidance', () => {
+  const lines = Array.from({ length: 400 }, (_, i) => `row ${i} some ordinary output text`);
+  const r = compress(lines.join('\n'), { hint: 'SEE FILE X.' });
+  assert.ok(r.text.includes('SEE FILE X.'));
+  assert.ok(!r.text.includes('Re-run'));
+});
