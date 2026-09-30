@@ -3,8 +3,17 @@ const fs = require('fs');
 const os = require('os');
 const path = require('path');
 
+// Hooks get CLAUDE_PLUGIN_DATA, but commands run via Bash do not. When installed, this
+// script lives at .../plugins/cache/<marketplace>/<plugin>/<version>/scripts/lib, and the
+// data dir is .../plugins/data/<plugin>-<marketplace>; derive it so both sides agree.
+function derived() {
+  const parts = __dirname.split(path.sep);
+  const i = parts.lastIndexOf('cache');
+  if (i < 1 || parts[i - 1] !== 'plugins' || parts.length < i + 3) return null;
+  return path.join(parts.slice(0, i).join(path.sep) || path.sep, 'data', `${parts[i + 2]}-${parts[i + 1]}`);
+}
 function dir() {
-  return process.env.CLAUDE_PLUGIN_DATA || path.join(os.homedir(), '.claude', 'token-thrifty');
+  return process.env.CLAUDE_PLUGIN_DATA || derived() || path.join(os.homedir(), '.claude', 'token-thrifty');
 }
 function file() { return path.join(dir(), 'stats.jsonl'); }
 
