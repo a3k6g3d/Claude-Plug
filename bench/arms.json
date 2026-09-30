@@ -1,0 +1,10 @@
+{
+  "baseline": {
+    "settings": { "enabledPlugins": { "token-thrifty@claude-plug": false } },
+    "expectPlugins": { "token-thrifty": false }
+  },
+  "token-thrifty": {
+    "settings": { "enabledPlugins": { "token-thrifty@claude-plug": true } },
+    "expectPlugins": { "token-thrifty": true }
+  }
+}
