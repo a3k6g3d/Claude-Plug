@@ -1,5 +1,5 @@
 'use strict';
-const { compress } = require('./lib/compress');
+const { run } = require('./lib/pipeline');
 const { record } = require('./lib/stats');
 const { spill } = require('./lib/spill');
 
@@ -20,12 +20,8 @@ process.stdin.on('end', () => {
     const ev = JSON.parse(raw);
     const text = textOf(ev.tool_response);
     if (text === null) return;
-    let r = compress(text);
+    const r = run(text, (t) => spill(t, ev.session_id));
     if (!r.changed) return;
-    if (r.text.includes('lines omitted')) {
-      const saved = spill(text, ev.session_id);
-      if (saved) r = compress(text, { hint: `Full output saved to ${saved}; Grep it or Read it with offset/limit instead of re-running the command.` });
-    }
     record({ tool: ev.tool_name, before: r.before, after: r.after });
     process.stdout.write(JSON.stringify({
       hookSpecificOutput: { hookEventName: 'PostToolUse', updatedToolOutput: r.text },
