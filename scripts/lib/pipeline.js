@@ -45,8 +45,9 @@ function recover(original, final, saved) {
 
 // Full compression pipeline used by the PostToolUse hook: test-run collapse, generic compression, safeguard.
 // `spill(text)` should return a file path holding the untouched output (or null).
-function run(text, spill, cmd) {
-  const base = isFileRead(cmd) ? FILE_READ_OPTS : isDataCommand(cmd) ? DATA_OPTS : {};
+function run(text, spill, cmd, opts) {
+  // `lossless`: never drop the middle of the output (used once trimming this command proved counter-productive).
+  const base = (opts && opts.lossless) ? { maxLines: 1e9 } : isFileRead(cmd) ? FILE_READ_OPTS : isDataCommand(cmd) ? DATA_OPTS : {};
   const unchanged = { text, before: text.length, after: text.length, changed: false, restored: 0 };
   let work = text;
   let saved = null;
@@ -67,7 +68,7 @@ function run(text, spill, cmd) {
   const rec = recover(text, final, saved);
   final = rec.text;
   if (final.length > text.length * 0.85) return unchanged;
-  return { text: final, before: text.length, after: final.length, changed: true, restored: rec.restored };
+  return { text: final, before: text.length, after: final.length, changed: true, restored: rec.restored, omitted: final.includes('lines omitted') };
 }
 
 module.exports = { run, recover, isFileRead, isDataCommand };

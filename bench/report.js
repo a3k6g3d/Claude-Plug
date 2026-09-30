@@ -7,6 +7,9 @@ function load(file) {
   try { return fs.readFileSync(file, 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l)); } catch (_) { return []; }
 }
 
+// A bootstrap interval over a handful of pairs is meaninglessly narrow; don't call a verdict below this.
+const MIN_PAIRS = 8;
+
 const fmt = (x, d) => (x == null ? 'n/a' : x.toFixed(d == null ? 2 : d));
 const sign = (x) => (x == null ? 'n/a' : `${x >= 0 ? '+' : ''}${x.toFixed(1)}%`);
 
@@ -40,7 +43,7 @@ function report(allRows, baseArm) {
     const cmp = compare(rows, base, metric[0]);
     lines.push('', `${metric[1]} vs ${base} (paired by task and repeat; negative = cheaper):`);
     for (const [arm, c] of Object.entries(cmp)) {
-      const verdict = !c.ci95 ? 'too few pairs' : (c.ci95[0] > 0 ? 'WORSE (significant)' : c.ci95[1] < 0 ? 'BETTER (significant)' : 'no detectable difference');
+      const verdict = (!c.ci95 || c.pairs < MIN_PAIRS) ? `too few pairs to judge (need ${MIN_PAIRS}+)` : (c.ci95[0] > 0 ? 'WORSE (significant)' : c.ci95[1] < 0 ? 'BETTER (significant)' : 'no detectable difference');
       lines.push(`  ${arm.padEnd(16)} median ${sign(c.medianDeltaPct)}  95% CI [${c.ci95 ? `${sign(c.ci95[0])}, ${sign(c.ci95[1])}` : 'n/a'}]  geo-mean ${sign(c.meanDeltaPct)}  pairs ${c.pairs}  costlier in ${c.worseCount}/${c.pairs}  sign-test p=${fmt(c.signP, 3)}  -> ${verdict}`);
     }
   }

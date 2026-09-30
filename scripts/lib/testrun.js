@@ -1,8 +1,9 @@
 'use strict';
-// Collapse runs of passing-test lines (vitest/jest verbose, node --test, TAP, pytest -v) into a count.
+// Collapse runs of passing-test lines (vitest/jest verbose, node --test, TAP, pytest -v, go test -v, cargo test,
+// python unittest -v) into a count.
 // Failures, headers, and summaries are never touched: only lines that positively look like a pass are collapsed.
 
-const PASS = /^\s*(?:[✓✔√]|ok \d+\b|PASS(?:ED)?\b|\S*::\S+ PASSED|\S+\.\w+ (?:::)?.*\bPASSED\b)/;
+const PASS = /^\s*(?:[✓✔√]|ok \d+\b|PASS(?:ED)?\b|--- PASS:|=== (?:RUN|PAUSE|CONT)\b|test \S+ \.\.\. ok\b|ok\s+\S+\s+[\d.]+s\b|\S+ \([\w.]+\) \.\.\. ok$|\S*::\S+ PASSED|\S+\.\w+ (?:::)?.*\bPASSED\b)/;
 // A pass-looking line that also contains failure words stays visible.
 const FAILISH = /\b(fail(?:ed|ing|ure)?|error|exception|not ok|✗|✘|×|✖)\b|[✗✘×✖]/i;
 const MIN_PASS_LINES = 8;
