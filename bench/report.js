@@ -1,7 +1,7 @@
 'use strict';
 const fs = require('fs');
 const path = require('path');
-const { compare, median } = require('./lib');
+const { compare, median, armSetProblems } = require('./lib');
 
 function load(file) {
   try { return fs.readFileSync(file, 'utf8').split('\n').filter(Boolean).map((l) => JSON.parse(l)); } catch (_) { return []; }
@@ -10,7 +10,8 @@ function load(file) {
 const fmt = (x, d) => (x == null ? 'n/a' : x.toFixed(d == null ? 2 : d));
 const sign = (x) => (x == null ? 'n/a' : `${x >= 0 ? '+' : ''}${x.toFixed(1)}%`);
 
-function report(rows, baseArm) {
+function report(allRows, baseArm) {
+  const rows = allRows.filter((r) => !r.warmup);
   const lines = [];
   const arms = [...new Set(rows.map((r) => r.arm))];
   if (!rows.length) return 'No results yet.';
@@ -24,6 +25,11 @@ function report(rows, baseArm) {
     const exp = r.filter((x) => x.passedExpect !== null && x.passedExpect !== undefined);
     lines.push(arm.padEnd(18) + `${ok.length}/${r.length}`.padStart(6) + fmt(median(ok.map((x) => x.cost)), 3).padStart(9) + String(Math.round(median(ok.map((x) => x.totalTokens)) || 0)).padStart(13)
       + fmt(median(ok.map((x) => x.turns)), 1).padStart(11) + (exp.length ? `${exp.filter((x) => x.passedExpect).length}/${exp.length}` : 'n/a').padStart(12) + String(r.reduce((s, x) => s + (x.compressions || 0), 0)).padStart(14));
+  }
+  const setProblems = armSetProblems(rows, base);
+  if (setProblems.length) {
+    lines.push('', 'WARNING: the arms are not comparable, so the deltas below are NOT trustworthy:');
+    for (const p of setProblems) lines.push(`  - ${p}`);
   }
   const bad = rows.filter((r) => r.problems && r.problems.length);
   if (bad.length) {

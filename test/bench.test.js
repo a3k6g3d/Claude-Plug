@@ -65,3 +65,38 @@ test('plan interleaves arms, is deterministic, and covers every combination', ()
   assert.deepStrictEqual(p1.map((t) => `${t.task.id}${t.arm.name}${t.rep}`), p2.map((t) => `${t.task.id}${t.arm.name}${t.rep}`));
   assert.strictEqual(plan(tasks, arms, 1, ['x']).length, 2);
 });
+
+test('armSetProblems passes when arms differ only by the plugin under test', () => {
+  const { armSetProblems } = require('../bench/lib');
+  const rows = [
+    { arm: 'baseline', plugins: ['agents-md', 'telemetry'], expectPlugins: { 'token-thrifty': false } },
+    { arm: 'baseline', plugins: ['telemetry', 'agents-md'], expectPlugins: { 'token-thrifty': false } },
+    { arm: 'tt', plugins: ['token-thrifty', 'agents-md', 'telemetry'], expectPlugins: { 'token-thrifty': true } },
+  ];
+  assert.deepStrictEqual(armSetProblems(rows, 'baseline'), []);
+});
+
+test('armSetProblems flags extra plugins and drift within an arm', () => {
+  const { armSetProblems } = require('../bench/lib');
+  const extra = armSetProblems([
+    { arm: 'baseline', plugins: ['agents-md'], expectPlugins: { 'token-thrifty': false } },
+    { arm: 'tt', plugins: ['token-thrifty', 'agents-md', 'pdf-viewer'], expectPlugins: { 'token-thrifty': true } },
+  ], 'baseline');
+  assert.strictEqual(extra.length, 1);
+  assert.ok(extra[0].includes('pdf-viewer'));
+  const drift = armSetProblems([
+    { arm: 'baseline', plugins: ['a'] }, { arm: 'baseline', plugins: ['a', 'b'] },
+  ], 'baseline');
+  assert.ok(drift.some((p) => p.includes('different plugin sets in different trials')));
+});
+
+test('report ignores warm-up rows', () => {
+  const rows = [
+    { task: '__warmup', arm: 'baseline', rep: 0, warmup: true, ok: true, cost: 9, totalTokens: 1, turns: 1 },
+    { task: 't', arm: 'baseline', rep: 1, ok: true, cost: 1, totalTokens: 10, turns: 2, plugins: ['a'] },
+    { task: 't', arm: 'plug', rep: 1, ok: true, cost: 1, totalTokens: 10, turns: 2, plugins: ['a'] },
+  ];
+  const out = report(rows, 'baseline');
+  assert.ok(out.includes('Trials: 2'));
+  assert.ok(!out.includes('9.000'));
+});
