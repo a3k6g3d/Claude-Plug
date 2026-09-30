@@ -1,1 +1,1 @@
-{ "name": "token-thrifty", "version": "0.3.2", "private": true, "license": "MIT", "scripts": { "test": "node --test test/*.test.js" } }
+{ "name": "token-thrifty", "version": "0.3.3", "private": true, "license": "MIT", "scripts": { "test": "node --test test/*.test.js" } }
