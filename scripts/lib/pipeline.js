@@ -3,6 +3,15 @@ const { compress, IMPORTANT, ANSI } = require('./compress');
 const { collapsePassing, PASS } = require('./testrun');
 
 const RESTORE_CAP = 30;
+
+// Deliberate file reads (sed -n, cat, head, tail, Get-Content on a file) are lines the model asked for,
+// so they get a much higher line cap than ordinary command output.
+const FILE_READ = /^(sed -n|cat( -n)?\s+[^|]*\.\w+|head( -n?\s*\d+)?\s+\S+\.\w+|tail( -n?\s*\d+)?\s+\S+\.\w+|Get-Content|type\s+\S+\.\w+|nl\s)/;
+const FILE_READ_OPTS = { maxLines: 300, head: 100, tail: 150 };
+function isFileRead(cmd) {
+  const c = String(cmd || '').replace(/^\s*(cd\s+("[^"]*"|\S+)\s*(&&|;)\s*)+/, '').replace(/^(\w+=\S+\s+)+/, '');
+  return FILE_READ.test(c);
+}
 const clean = (l) => l.replace(ANSI, '').replace(/\r+$/, '').trim();
 
 // Safeguard: after compression, every error/warning-looking line of the original must still be visible.
@@ -26,7 +35,8 @@ function recover(original, final, saved) {
 
 // Full compression pipeline used by the PostToolUse hook: test-run collapse, generic compression, safeguard.
 // `spill(text)` should return a file path holding the untouched output (or null).
-function run(text, spill) {
+function run(text, spill, cmd) {
+  const base = isFileRead(cmd) ? FILE_READ_OPTS : {};
   const unchanged = { text, before: text.length, after: text.length, changed: false, restored: 0 };
   let work = text;
   let saved = null;
@@ -36,10 +46,10 @@ function run(text, spill) {
     work = collapsePassing(text, saved).text;
   }
 
-  let r = compress(work);
+  let r = compress(work, base);
   if (r.changed && r.text.includes('lines omitted')) {
     if (!saved && spill) saved = spill(text);
-    if (saved) r = compress(work, { hint: `Full output saved to ${saved}; Grep it or Read it with offset/limit instead of re-running the command.` });
+    if (saved) r = compress(work, { ...base, hint: `Full output saved to ${saved}; Grep it or Read it with offset/limit instead of re-running the command.` });
   }
 
   let final = r.changed ? r.text : work;
@@ -50,4 +60,4 @@ function run(text, spill) {
   return { text: final, before: text.length, after: final.length, changed: true, restored: rec.restored };
 }
 
-module.exports = { run, recover };
+module.exports = { run, recover, isFileRead };

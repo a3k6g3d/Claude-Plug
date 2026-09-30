@@ -23,7 +23,7 @@ process.stdin.on('end', () => {
     const text = textOf(ev.tool_response);
     if (text === null) return;
 
-    const r = run(text, (t) => spill(t, ev.session_id));
+    const r = run(text, (t) => spill(t, ev.session_id), (ev.tool_input || {}).command);
     let out = r.changed ? r.text : text;
 
     // Cross-call dedup for shell output: skip lines the model already saw in a recent call.

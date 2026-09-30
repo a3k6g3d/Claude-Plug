@@ -74,3 +74,17 @@ test('pipeline output never loses an error line even with 100 errors mid-output'
   assert.strictEqual(visible, 70); // 40 kept by the compressor + 30 restored
   assert.ok(r.text.includes('30 more not shown (see S.txt)'));
 });
+
+test('file-read commands get a 300-line cap, other commands keep 120', () => {
+  const { run, isFileRead } = require('../scripts/lib/pipeline');
+  assert.ok(isFileRead('sed -n 1,250p src/app.ts'));
+  assert.ok(isFileRead('cd "I:/proj" && cat -n src/app.ts'));
+  assert.ok(isFileRead('Get-Content src/app.ts'));
+  assert.ok(!isFileRead('npm test 2>&1 | tail -20'));
+  assert.ok(!isFileRead('git log --oneline'));
+  const src = Array.from({ length: 250 }, (_, i) => `const value${i} = compute(${i}); // some line of code`).join('\n');
+  assert.ok(!run(src, () => 'S', 'sed -n 1,250p src/app.ts').changed);      // whole file kept
+  assert.ok(run(src, () => 'S', 'npm run build').text.includes('lines omitted')); // ordinary output is trimmed
+  const big = Array.from({ length: 600 }, (_, i) => `const value${i} = compute(${i}); // some line of code`).join('\n');
+  assert.ok(run(big, () => 'S', 'cat src/big.ts').text.includes('lines omitted')); // huge dumps still trimmed
+});
